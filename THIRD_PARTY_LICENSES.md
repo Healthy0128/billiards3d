@@ -18,3 +18,19 @@ These libraries are loaded from public CDNs.
 - If the remote model cannot load, the built-in table remains visible automatically.
 
 Before commercial redistribution, replace this runtime model with a locally bundled asset whose redistribution license is explicit (for example a confirmed CC0/CC-BY model) and update this notice.
+
+## Recorded billiard sound effects
+
+The following real recorded billiard/pool sounds are bundled locally in `assets/audio/sfx/`.
+
+- `pool-shots-cc0.mp3`
+  - Original: `BILLIARD pool shots- CsG.wav` by csaszi
+  - Freesound sound ID: 350918
+  - License: Creative Commons Zero (CC0)
+  - Used for cue strike and ball-to-ball impact playback.
+- `racking-pool-balls-cc0.wav`
+  - Freesound sound ID: 274566
+  - License: Creative Commons Zero (CC0)
+  - Used for rack/reset feedback.
+
+A source note is also stored next to the audio files in `assets/audio/sfx/README.md`.
