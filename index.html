@@ -10,22 +10,32 @@
 <body>
   <div id="app">
     <canvas id="game"></canvas>
+
     <header class="hud topbar">
       <div>
         <div class="title">3D BILLIARDS</div>
-        <div id="status" class="status">ドラッグして狙い、離してショット</div>
+        <div id="status" class="status">ドラッグで狙い、引いて、離してショット</div>
       </div>
       <div class="actions">
+        <button id="modeBtn">練習</button>
         <button id="resetBtn">ラック</button>
         <button id="cameraBtn">視点</button>
         <button id="soundBtn">SOUND ON</button>
       </div>
     </header>
+
+    <div id="matchHud" class="hud match-hud hidden">
+      <div id="p1Card" class="player active"><span>PLAYER 1</span><b id="p1Group">OPEN</b></div>
+      <div class="versus">8 BALL</div>
+      <div id="p2Card" class="player"><span>PLAYER 2</span><b id="p2Group">OPEN</b></div>
+    </div>
+
     <div class="hud power-wrap">
-      <div class="label">POWER</div>
+      <div class="label">PULL / POWER <span id="powerText">0%</span></div>
       <div class="power"><div id="powerFill"></div></div>
     </div>
-    <div class="hud help">PC: 左ドラッグでショット / ホイールでズーム　スマホ: 1本指ドラッグでショット</div>
+
+    <div class="hud help">狙う → キューを手前に引く → 離して撞く　強さは引いた距離＋ゲージで確認</div>
   </div>
   <script type="module" src="./src/main.js"></script>
 </body>
