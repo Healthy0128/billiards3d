@@ -4,6 +4,7 @@ const phaseSteps=[...document.querySelectorAll('.phase-step')];
 const statusEl=$('#status'),stanceBtn=$('#stanceBtn'),toPullBtn=$('#toPullBtn'),backToViewBtn=$('#backToViewBtn'),cancelPullBtn=$('#cancelPullBtn');
 const pullPanel=$('#pullPanel'),pullTrack=$('#pullTrack'),pullPowerText=$('#pullPowerText'),powerControl=$('#powerControl'),shootBtn=$('#shootBtn'),shotFlash=$('#shotFlash'),canvas=$('#game');
 const ballInHandBtn=$('#ballInHandBtn'),modeBtn=$('#modeBtn'),resetBtn=$('#resetBtn');
+const AIM_SENSITIVITY=0.28;
 let phase='view',pulling=false,pullPointer=null,pullPower=0,pullStart=null,lastPull=null;
 
 function cameraBrowse(){window.billiardsCamera?.browse?.()}
@@ -12,8 +13,8 @@ function setPhase(next){
   phase=next;body.dataset.phase=next;
   phaseSteps.forEach(el=>el.classList.toggle('active',el.dataset.step===next));
   if(next==='view')statusEl.textContent='盤面を自由に見て、打ちたい方向を決めます';
-  if(next==='aim')statusEl.textContent='構えました。盤面を引っ張って、離すと打ちます';
-  if(next==='pull')statusEl.textContent='引いた反対方向へ打ちます。距離がパワーです';
+  if(next==='aim')statusEl.textContent='構えました。ゆっくり引いて狙い、離すと打ちます';
+  if(next==='pull')statusEl.textContent='横の動きはゆっくり微調整。引く距離がパワーです';
   if(next==='shot')statusEl.textContent='SHOT';
 }
 
@@ -45,7 +46,7 @@ function renderPull(x,y){
   line.style.width=capped+'px';line.style.transform=`rotate(${angle}rad)`;
   pullPower=Math.min(100,capped/max*100);badge.textContent=Math.round(pullPower)+'%';pullPowerText.textContent=Math.round(pullPower)+'%';
   powerControl.value=String(Math.max(1,Math.round(pullPower)));powerControl.dispatchEvent(new Event('input',{bubbles:true}));
-  window.__billiardsRuntime?.aimFromScreenPull?.(dx,dy);
+  window.__billiardsRuntime?.aimFromScreenPull?.(dx*AIM_SENSITIVITY,dy);
   lastPull={dx,dy,d};
 }
 
