@@ -1,53 +1,24 @@
-import * as THREE from 'https://esm.sh/three@0.181.1';
-import JSZip from 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/+esm';
-import { OBJLoader } from 'https://esm.sh/three@0.181.1/examples/jsm/loaders/OBJLoader.js';
-import { MTLLoader } from 'https://esm.sh/three@0.181.1/examples/jsm/loaders/MTLLoader.js';
-
 const SOURCE='./src/main7.js';
-const ASSET_ZIP='https://opengameart.org/sites/default/files/Pool-table.zip';
 
 async function bootGame(){
   let source=await fetch(SOURCE,{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error(`main7 ${r.status}`);return r.text()});
-  source=source.replace("import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.181.1/build/three.module.js';","import * as THREE from 'https://esm.sh/three@0.181.1';");
   source=source.replace("const table={w:2.84,h:1.42,y:.78,rail:.115},ballR=.05715,pocketR=.098,balls=[],rails=[];","const table={w:2.84,h:1.42,y:.78,rail:.115},ballR=.05715,pocketR=.098,balls=[],rails=[];window.__billiardsRuntime={scene,THREE,table,statusEl,camera};");
   source=source.replace("const wood=0x4b2412,wood2=0x2f160c,metal=0x8a785c,felt=0x0a6246;","const proceduralTable=new THREE.Group();scene.add(proceduralTable);window.__billiardsRuntime.tableVisual=proceduralTable;const wood=0x4b2412,wood2=0x2f160c,metal=0x8a785c,felt=0x0a6246;");
   const swaps=[['scene.add(apron);','proceduralTable.add(apron);'],['scene.add(slate);','proceduralTable.add(slate);'],['scene.add(cloth);','proceduralTable.add(cloth);'],['scene.add(leg);','proceduralTable.add(leg);'],['scene.add(foot);','proceduralTable.add(foot);'],['scene.add(m);const cap=','proceduralTable.add(m);const cap='],['scene.add(cap);const b=','proceduralTable.add(cap);const b='],['scene.add(cup);','proceduralTable.add(cup);'],['scene.add(ring);','proceduralTable.add(ring);'],['scene.add(d)}','proceduralTable.add(d)}']];
   for(const [a,b] of swaps)source=source.replaceAll(a,b);
 
-  // Ball center should sit just above the cloth top, not ~3 cm in the air.
   source=source.replaceAll('table.y+.055+ballR','table.y+.027+ballR');
-
-  // Keep full pull useful, but cap cue-ball launch speed near a real hard break instead of arcade-level velocity.
   source=source.replace('impulse=.72+p*4.35','impulse=.20+p*1.35');
-
   source=source.replaceAll('sleepSpeedLimit:.02,sleepTimeLimit:.7','sleepSpeedLimit:.055,sleepTimeLimit:.18');
   source=source.replace("function cueBall(){return balls.find(b=>b.n===0&&!b.pocketed&&!b.falling)}function allStopped(){return balls.every(b=>b.pocketed||b.falling||b.body.velocity.length()<.045)}","function cueBall(){return balls.find(b=>b.n===0&&!b.pocketed&&!b.falling)}function allStopped(){return balls.every(b=>b.pocketed||b.falling||Math.hypot(b.body.velocity.x,b.body.velocity.z)<.055)}");
   source=source.replace(
     "let aimAngle=0,spinX=0,spinY=0,cueAnim=0,aimDragging=false,aimStartX=0,aimStartAngle=0;",
     `let aimAngle=0,spinX=0,spinY=0,cueAnim=0,aimDragging=false,aimStartX=0,aimStartAngle=0;\nwindow.__billiardsRuntime.aimFromScreenPull=(dx,dy)=>{\n  const right=new THREE.Vector3().setFromMatrixColumn(camera.matrix,0);right.y=0;if(right.lengthSq()<1e-6)right.set(1,0,0);right.normalize();\n  const forward=new THREE.Vector3();camera.getWorldDirection(forward);forward.y=0;if(forward.lengthSq()<1e-6)forward.set(0,0,-1);forward.normalize();\n  const dir=right.multiplyScalar(-dx).add(forward.multiplyScalar(dy));\n  if(dir.lengthSq()>1e-5){dir.normalize();aimAngle=Math.atan2(dir.z,dir.x);updateAim();}\n};\nwindow.__billiardsRuntime.setAimAngle=a=>{aimAngle=a;updateAim()};\nwindow.__billiardsRuntime.getAimAngle=()=>aimAngle;`
   );
-  source=source.replace("let last=performance.now(),acc=0,wasMoving=false;const fixed=1/120;",`function applyRollingResistance(b,dt){\n  const v=b.body.velocity;const s=Math.hypot(v.x,v.z);const w=b.body.angularVelocity;\n  const restY=table.y+0.027+ballR;\n  // Billiard balls stay constrained to the cloth plane while in play; pockets remove bodies before their fall animation.\n  if(Math.abs(b.body.position.y-restY)<0.12){b.body.position.y=restY;v.y=0;}\n  if(s<0.055){v.x=0;v.z=0;v.y=0;w.setZero();b.body.position.y=restY;b.body.sleep();return;}\n  const decel=s>1.6?0.15:s>0.8?0.20:s>0.35?0.28:s>0.14?0.42:0.68;\n  const next=Math.max(0,s-decel*dt),k=next/s;v.x*=k;v.z*=k;\n  const spinDrag=s<0.12?5.5:s<0.22?2.8:0.7;const spinKeep=Math.max(0,1-spinDrag*dt);\n  w.x*=spinKeep;w.y*=spinKeep;w.z*=spinKeep;\n  if(next<0.055){v.x=0;v.z=0;v.y=0;w.setZero();b.body.position.y=restY;b.body.sleep();}\n}\nlet last=performance.now(),acc=0,wasMoving=false;const fixed=1/120;`);
+  source=source.replace("let last=performance.now(),acc=0,wasMoving=false;const fixed=1/120;",`function applyRollingResistance(b,dt){\n  const v=b.body.velocity;const s=Math.hypot(v.x,v.z);const w=b.body.angularVelocity;\n  const restY=table.y+0.027+ballR;\n  if(Math.abs(b.body.position.y-restY)<0.12){b.body.position.y=restY;v.y=0;}\n  if(s<0.055){v.x=0;v.z=0;v.y=0;w.setZero();b.body.position.y=restY;b.body.sleep();return;}\n  const decel=s>1.6?0.15:s>0.8?0.20:s>0.35?0.28:s>0.14?0.42:0.68;\n  const next=Math.max(0,s-decel*dt),k=next/s;v.x*=k;v.z*=k;\n  const spinDrag=s<0.12?5.5:s<0.22?2.8:0.7;const spinKeep=Math.max(0,1-spinDrag*dt);\n  w.x*=spinKeep;w.y*=spinKeep;w.z*=spinKeep;\n  if(next<0.055){v.x=0;v.z=0;v.y=0;w.setZero();b.body.position.y=restY;b.body.sleep();}\n}\nlet last=performance.now(),acc=0,wasMoving=false;const fixed=1/120;`);
   source=source.replace("const v=b.body.velocity,s=Math.hypot(v.x,v.z);if(s<.01){v.x=v.z=0}else{const rr=Math.max(0,1-.23*fixed);v.x*=rr;v.z*=rr}if(Math.abs(v.y)<.025)v.y=0","applyRollingResistance(b,fixed)");
   const blob=new Blob([source],{type:'text/javascript'});const url=URL.createObjectURL(blob);try{await import(url)}finally{URL.revokeObjectURL(url)}
+  const rt=window.__billiardsRuntime;if(rt){rt.tableVisual.visible=true;rt.statusEl.textContent='盤面を自由に見てから構えます';}
 }
 
-function basename(path){return path.split('/').pop().toLowerCase()}
-async function loadRealTable(){
-  const rt=window.__billiardsRuntime;if(!rt)return;
-  try{
-    rt.statusEl.textContent='実物モデルのビリヤード台を読み込み中…';
-    const res=await fetch(ASSET_ZIP,{mode:'cors'});if(!res.ok)throw new Error(`asset ${res.status}`);
-    const zip=await JSZip.loadAsync(await res.arrayBuffer());const entries=Object.values(zip.files).filter(f=>!f.dir);
-    const objEntry=entries.find(f=>/\.obj$/i.test(f.name));if(!objEntry)throw new Error('OBJ not found');const mtlEntry=entries.find(f=>/\.mtl$/i.test(f.name));
-    const blobUrls=new Map();for(const entry of entries){if(/\.(png|jpe?g|bmp|gif)$/i.test(entry.name)){const data=await entry.async('blob');blobUrls.set(basename(entry.name),URL.createObjectURL(data));}}
-    let materials=null;if(mtlEntry){let mtl=await mtlEntry.async('text');for(const [name,url] of blobUrls)mtl=mtl.replaceAll(name,url);materials=new MTLLoader().parse(mtl,'');materials.preload();}
-    const loader=new OBJLoader();if(materials)loader.setMaterials(materials);const model=loader.parse(await objEntry.async('text'));
-    model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;if(!materials)o.material=new THREE.MeshStandardMaterial({color:0x4b2918,roughness:.42})}});model.updateMatrixWorld(true);
-    let box=new THREE.Box3().setFromObject(model),size=box.getSize(new THREE.Vector3());const dims=[size.x,size.y,size.z];const minAxis=dims.indexOf(Math.min(...dims));if(minAxis===2){model.rotation.x=-Math.PI/2;model.updateMatrixWorld(true)}
-    box=new THREE.Box3().setFromObject(model);size=box.getSize(new THREE.Vector3());if(size.z>size.x){model.rotation.y+=Math.PI/2;model.updateMatrixWorld(true);box=new THREE.Box3().setFromObject(model);size=box.getSize(new THREE.Vector3())}
-    const targetLength=rt.table.w+rt.table.rail*2.4;model.scale.multiplyScalar(targetLength/Math.max(size.x,size.z));model.updateMatrixWorld(true);box=new THREE.Box3().setFromObject(model);const center=box.getCenter(new THREE.Vector3());model.position.x-=center.x;model.position.z-=center.z;model.position.y+=rt.table.y+.245-box.max.y;model.updateMatrixWorld(true);
-    rt.scene.add(model);rt.tableVisual.visible=false;rt.realTable=model;rt.statusEl.textContent='実物モデル台を使用中 — 盤面を自由に見てから構えます';
-    window.addEventListener('beforeunload',()=>{for(const url of blobUrls.values())URL.revokeObjectURL(url)},{once:true});
-  }catch(err){console.warn('CC0 pool-table asset load failed; using built-in fallback.',err);rt.tableVisual.visible=true;rt.statusEl.textContent='台モデルを読み込めなかったため内蔵台を使用中';}
-}
-await bootGame();await loadRealTable();
+await bootGame();
