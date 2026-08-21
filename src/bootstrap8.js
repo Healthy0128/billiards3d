@@ -8,25 +8,23 @@ async function bootGame(){
   let source=await fetch(SOURCE,{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error(`main7 ${r.status}`);return r.text()});
   source=source.replace("import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.181.1/build/three.module.js';","import * as THREE from 'https://esm.sh/three@0.181.1';");
   source=source.replace("const table={w:2.84,h:1.42,y:.78,rail:.115},ballR=.05715,pocketR=.098,balls=[],rails=[];","const table={w:2.84,h:1.42,y:.78,rail:.115},ballR=.05715,pocketR=.098,balls=[],rails=[];window.__billiardsRuntime={scene,THREE,table,statusEl,camera};");
-  source=source.replace("const wood=0x4b2412,wood2=0x2f160c,metal=0x8a785c,felt=0x0a6246;","const proceduralTable=new THREE.Group();scene.add(proceduralTable);window.__billiardsRuntime.tableVisual=proceduralTable;window.__billiardsRuntime.surfaceVisuals=[];const wood=0x4b2412,wood2=0x2f160c,metal=0x8a785c,felt=0x0a6246;");
+  source=source.replace("const wood=0x4b2412,wood2=0x2f160c,metal=0x8a785c,felt=0x0a6246;","const proceduralTable=new THREE.Group();scene.add(proceduralTable);window.__billiardsRuntime.tableVisual=proceduralTable;const wood=0x4b2412,wood2=0x2f160c,metal=0x8a785c,felt=0x0a6246;");
   const swaps=[
     ['scene.add(apron);','proceduralTable.add(apron);'],
     ['scene.add(slate);','proceduralTable.add(slate);'],
-    ['scene.add(cloth);','proceduralTable.add(cloth);window.__billiardsRuntime.surfaceVisuals.push({kind:"cloth",obj:cloth});'],
+    ['scene.add(cloth);','proceduralTable.add(cloth);'],
     ['scene.add(leg);','proceduralTable.add(leg);'],
     ['scene.add(foot);','proceduralTable.add(foot);'],
-    ['scene.add(m);const cap=','proceduralTable.add(m);window.__billiardsRuntime.surfaceVisuals.push({kind:"rail",obj:m});const cap='],
-    ['scene.add(cap);const b=','proceduralTable.add(cap);window.__billiardsRuntime.surfaceVisuals.push({kind:"cap",obj:cap});const b='],
-    ['scene.add(cup);','proceduralTable.add(cup);window.__billiardsRuntime.surfaceVisuals.push({kind:"pocket",obj:cup});'],
-    ['scene.add(ring);','proceduralTable.add(ring);window.__billiardsRuntime.surfaceVisuals.push({kind:"pocket",obj:ring});'],
-    ['scene.add(d)}','proceduralTable.add(d);window.__billiardsRuntime.surfaceVisuals.push({kind:"diamond",obj:d})}']
+    ['scene.add(m);const cap=','proceduralTable.add(m);const cap='],
+    ['scene.add(cap);const b=','proceduralTable.add(cap);const b='],
+    ['scene.add(cup);','proceduralTable.add(cup);'],
+    ['scene.add(ring);','proceduralTable.add(ring);'],
+    ['scene.add(d)}','proceduralTable.add(d)}']
   ];
   for(const [a,b] of swaps)source=source.replaceAll(a,b);
 
-  // A pool table has side pockets only at the centers of the LONG rails.
-  // The original procedural table incorrectly split both short rails at z=0,
-  // creating a fake center opening with no pocket. Replace each short rail with
-  // one continuous cushion, leaving openings only at the corner pockets.
+  // A pool table has side pockets only at the centers of the long rails.
+  // Keep each short rail continuous so there is no false center opening.
   source=source.replace(
     "rail(-table.w/2-table.rail/2,-table.h/4-.035,table.rail,table.h/2-gap);rail(-table.w/2-table.rail/2,table.h/4+.035,table.rail,table.h/2-gap);rail(table.w/2+table.rail/2,-table.h/4-.035,table.rail,table.h/2-gap);rail(table.w/2+table.rail/2,table.h/4+.035,table.rail,table.h/2-gap);",
     "rail(-table.w/2-table.rail/2,0,table.rail,table.h-gap*1.2);rail(table.w/2+table.rail/2,0,table.rail,table.h-gap*1.2);"
@@ -66,20 +64,11 @@ function alignRealTable(model,rt){
   return {feltFound:!!felt};
 }
 
-function preservePlayableSurface(rt){
-  // Keep only the precisely aligned cloth and pocket mouths visible.
-  // Procedural rail/cap meshes are collision helpers and stay visually hidden;
-  // the real GLB table supplies the visible wooden rails.
-  for(const entry of rt.surfaceVisuals||[]){
-    const kind=entry?.kind,obj=entry?.obj;
-    if(!obj)continue;
-    if(kind==='cloth'||kind==='pocket'){
-      if(obj.parent)rt.scene.attach(obj);
-      obj.visible=true;
-    }else{
-      obj.visible=false;
-    }
-  }
+function useRealModelWithInvisiblePhysics(rt){
+  // Hide the entire procedural table VISUAL only.
+  // Its Cannon bodies are separate objects in the physics world, so rail/floor
+  // collisions remain active and invisible. The loaded GLB stays untouched and
+  // supplies 100% of the visible table: wood, rails, felt, pockets and legs.
   rt.tableVisual.visible=false;
 }
 
@@ -87,7 +76,7 @@ async function loadRealTable(){
   const rt=window.__billiardsRuntime;if(!rt)return;addTableLights(rt);
   try{
     const gltf=await new GLTFLoader().loadAsync(REAL_TABLE_URL);const model=gltf.scene;const info=alignRealTable(model,rt);rt.scene.add(model);rt.realTable=model;
-    requestAnimationFrame(()=>{if(rt.realTable?.parent){preservePlayableSurface(rt);rt.statusEl.textContent=info.feltFound?'実モデル台を使用中 — 正しい6ポケット配置・透明補助壁':'実モデル台を使用中 — 正しい6ポケット配置・透明補助壁'}});
+    requestAnimationFrame(()=>{if(rt.realTable?.parent){useRealModelWithInvisiblePhysics(rt);rt.statusEl.textContent=info.feltFound?'実モデルをそのまま表示 — 透明の物理壁のみ追加':'実モデルをそのまま表示 — 透明の物理壁のみ追加'}});
   }catch(err){console.warn('Real GLB pool-table load failed; using built-in fallback.',err);rt.tableVisual.visible=true;rt.statusEl.textContent='内蔵台を使用中 — 実モデルの読み込みに失敗しました';}
 }
 
