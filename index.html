@@ -14,16 +14,15 @@
     <header class="hud topbar">
       <div>
         <div class="title">3D BILLIARDS</div>
-        <div id="status" class="status">台をなぞって方向を合わせます</div>
+        <div id="status" class="status">右下の照準パッドで狙いを合わせます</div>
       </div>
       <div class="actions">
         <button id="modeBtn">練習</button>
         <button id="guideBtn">GUIDE ON</button>
-        <button id="ballInHandBtn" class="hidden">手球確定</button>
         <button id="musicBtn">JAZZ OFF</button>
-        <button id="resetBtn">ラック</button>
         <button id="cameraBtn">視点</button>
         <button id="soundBtn">SOUND ON</button>
+        <button id="resetBtn">ラック</button>
       </div>
     </header>
 
@@ -33,23 +32,39 @@
       <div id="p2Card" class="player"><span>PLAYER 2</span><b id="p2Group">OPEN</b></div>
     </div>
 
-    <div class="hud pro-panel">
-      <div class="spin-wrap">
+    <div id="fineAim" class="hud fine-aim">
+      <button id="aimLeftBtn" aria-label="左へ微調整">◀</button>
+      <span id="angleText">0.0°</span>
+      <button id="aimRightBtn" aria-label="右へ微調整">▶</button>
+    </div>
+
+    <div class="hud control-dock">
+      <div class="spin-wrap compact-panel">
         <div class="control-label">CUE BALL <span id="spinText">CENTER</span></div>
         <div id="spinPad" class="spin-pad" aria-label="撞点">
           <div class="spin-cross h"></div><div class="spin-cross v"></div>
           <div id="spinDot" class="spin-dot"></div>
         </div>
       </div>
-      <div class="power-column">
+
+      <div class="power-column compact-panel">
         <div class="control-label">POWER <span id="powerText">35%</span></div>
         <input id="powerControl" type="range" min="0" max="100" value="35" />
         <button id="shootBtn" class="shoot-btn">SHOT</button>
+        <button id="ballInHandBtn" class="confirm-btn hidden">手球位置を確定</button>
+      </div>
+
+      <div class="aim-wrap compact-panel">
+        <div class="control-label">AIM <span id="aimHint">SWIPE</span></div>
+        <div id="aimPad" class="aim-pad">
+          <div class="aim-center"></div>
+          <div class="aim-caption">左右にスワイプ</div>
+        </div>
       </div>
     </div>
 
-    <div class="hud help">台をなぞる＝狙い　撞点＝回転　POWER＝強さ　SHOT＝撞く　モードで練習／8BALL／9BALLを切替</div>
+    <div class="hud help">照準パッド＝方向　◀▶＝微調整　撞点＝回転　POWER＝強さ　SHOT＝撞く</div>
   </div>
-  <script type="module" src="./src/main5.js"></script>
+  <script type="module" src="./src/main6.js"></script>
 </body>
 </html>
