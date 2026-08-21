@@ -1,1 +1,58 @@
-placeholder
+name: Import billiard audio
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/import-billiard-audio.yml
+
+permissions:
+  contents: write
+
+jobs:
+  import-audio:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Download CC0 billiard recordings
+        run: |
+          set -euxo pipefail
+          mkdir -p assets/audio/sfx
+          curl -L --fail --retry 3 \
+            'https://raw.githubusercontent.com/krhollow/csc281-survival-game/f5957d32a4d92e81655228e77194870f5f6db2c2/audio/pool%20shots.mp3' \
+            -o assets/audio/sfx/pool-shots-cc0.mp3
+          curl -L --fail --retry 3 \
+            'https://raw.githubusercontent.com/krhollow/csc281-survival-game/f5957d32a4d92e81655228e77194870f5f6db2c2/audio/racking%20pool%20balls.wav' \
+            -o assets/audio/sfx/racking-pool-balls-cc0.wav
+          test -s assets/audio/sfx/pool-shots-cc0.mp3
+          test -s assets/audio/sfx/racking-pool-balls-cc0.wav
+      - name: Write source note
+        run: |
+          cat > assets/audio/sfx/README.md <<'EOF'
+          # Billiard sound recordings
+
+          These are real recorded billiard/pool sounds used under CC0.
+
+          - `pool-shots-cc0.mp3`
+            - Original: `BILLIARD pool shots- CsG.wav` by csaszi
+            - Freesound ID: 350918
+            - License: Creative Commons 0 (CC0)
+            - Source: https://freesound.org/people/csaszi/sounds/350918/
+            - Mirror used for automated import: `krhollow/csc281-survival-game`
+          - `racking-pool-balls-cc0.wav`
+            - Original source: Freesound ID 274566
+            - License: Creative Commons 0 (CC0)
+            - Source: https://freesound.org/s/274566/
+            - Mirror used for automated import: `krhollow/csc281-survival-game`
+          EOF
+      - name: Commit imported audio
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- assets/audio/sfx/pool-shots-cc0.mp3 assets/audio/sfx/racking-pool-balls-cc0.wav assets/audio/sfx/README.md
+          git commit -m 'Add CC0 recorded billiard sound effects'
+          git push origin HEAD:main
