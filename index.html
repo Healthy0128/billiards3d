@@ -6,40 +6,23 @@
   <meta name="theme-color" content="#07130f" />
   <title>3D Billiards</title>
   <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="./camera-controls.css" />
 </head>
 <body data-phase="view">
   <div id="app">
     <canvas id="game"></canvas>
     <header class="hud topbar">
       <div><div class="title">3D BILLIARDS</div><div id="status" class="status">盤面を自由に見てから構えます</div></div>
-      <div class="actions">
-        <button id="modeBtn">練習</button><button id="guideBtn">GUIDE ON</button><button id="musicBtn">JAZZ OFF</button><button id="soundBtn">SOUND ON</button><button id="resetBtn">ラック</button>
-      </div>
+      <div class="actions"><button id="modeBtn">練習</button><button id="guideBtn">GUIDE ON</button><button id="musicBtn">JAZZ OFF</button><button id="soundBtn">SOUND ON</button><button id="resetBtn">ラック</button></div>
     </header>
-    <div id="phaseRail" class="hud phase-rail" aria-label="ショット手順">
-      <div data-step="view" class="phase-step active"><b>1</b><span>見る</span></div><i>›</i><div data-step="aim" class="phase-step"><b>2</b><span>構える</span></div><i>›</i><div data-step="pull" class="phase-step"><b>3</b><span>引く</span></div><i>›</i><div data-step="shot" class="phase-step"><b>4</b><span>打つ</span></div>
-    </div>
+    <div id="phaseRail" class="hud phase-rail" aria-label="ショット手順"><div data-step="view" class="phase-step active"><b>1</b><span>見る</span></div><i>›</i><div data-step="aim" class="phase-step"><b>2</b><span>構える</span></div><i>›</i><div data-step="pull" class="phase-step"><b>3</b><span>引く</span></div><i>›</i><div data-step="shot" class="phase-step"><b>4</b><span>打つ</span></div></div>
     <div id="matchHud" class="hud match-hud hidden"><div id="p1Card" class="player active"><span>PLAYER 1</span><b id="p1Group">OPEN</b></div><div id="gameLabel" class="versus">8 BALL</div><div id="p2Card" class="player"><span>PLAYER 2</span><b id="p2Group">OPEN</b></div></div>
-
-    <div id="viewPanel" class="hud view-panel">
-      <div class="view-copy"><small>STEP 1</small><strong>盤面を見る</strong><span>ドラッグで回転・ピンチでズーム・2本指で移動</span></div>
-      <div class="axis-row"><span>CTRL DRAG</span><button data-axis="X">X</button><button data-axis="Y" class="active">Y</button><button data-axis="Z">Z</button></div>
-      <div class="view-buttons"><button id="stanceBtn" class="primary-action">構える</button></div>
-      <button id="ballInHandBtn" class="confirm-btn hidden">手球位置を確定</button>
-    </div>
-
+    <div id="viewPanel" class="hud view-panel"><div class="view-copy"><small>STEP 1</small><strong>盤面を見る</strong><span>ドラッグで回転・ピンチでズーム・2本指で移動</span></div><div class="axis-row"><span>CTRL DRAG</span><button data-axis="X">X</button><button data-axis="Y" class="active">Y</button><button data-axis="Z">Z</button></div><div class="view-buttons"><button id="stanceBtn" class="primary-action">構える</button></div><button id="ballInHandBtn" class="confirm-btn hidden">手球位置を確定</button></div>
     <div id="fineAim" class="hud fine-aim"><button id="aimLeftBtn" aria-label="左へ微調整">◀</button><span id="angleText">0.0°</span><button id="aimRightBtn" aria-label="右へ微調整">▶</button></div>
-    <div class="hud control-dock">
-      <div class="spin-wrap compact-panel"><div class="control-label">CUE BALL <span id="spinText">CENTER</span></div><div id="spinPad" class="spin-pad" aria-label="撞点"><div class="spin-cross h"></div><div class="spin-cross v"></div><div id="spinDot" class="spin-dot"></div></div></div>
-      <div class="power-column compact-panel legacy-power"><div class="control-label">POWER <span id="powerText">35%</span></div><input id="powerControl" type="range" min="0" max="100" value="35" /><button id="shootBtn" class="shoot-btn">SHOT</button></div>
-      <div class="aim-wrap compact-panel"><div class="control-label">AIM <span id="aimHint">SWIPE</span></div><div id="aimPad" class="aim-pad"><div class="aim-center"></div><div class="aim-caption">左右にスワイプ</div></div><button id="toPullBtn" class="phase-action">この向きで引く</button><button id="backToViewBtn" class="phase-subaction">見るに戻る</button></div>
-    </div>
-
+    <div class="hud control-dock"><div class="spin-wrap compact-panel"><div class="control-label">CUE BALL <span id="spinText">CENTER</span></div><div id="spinPad" class="spin-pad" aria-label="撞点"><div class="spin-cross h"></div><div class="spin-cross v"></div><div id="spinDot" class="spin-dot"></div></div></div><div class="power-column compact-panel legacy-power"><div class="control-label">POWER <span id="powerText">35%</span></div><input id="powerControl" type="range" min="0" max="100" value="35" /><button id="shootBtn" class="shoot-btn">SHOT</button></div><div class="aim-wrap compact-panel"><div class="control-label">AIM <span id="aimHint">SWIPE</span></div><div id="aimPad" class="aim-pad"><div class="aim-center"></div><div class="aim-caption">左右にスワイプ</div></div><button id="toPullBtn" class="phase-action">この向きで引く</button><button id="backToViewBtn" class="phase-subaction">見るに戻る</button></div></div>
     <div id="pullPanel" class="hud pull-panel"><div class="pull-copy"><small>STEP 3</small><strong>キューを引く</strong><span>下へ引くほど強く。離すと打ちます。</span></div><div id="pullTrack" class="pull-track"><div class="pull-zero">0%</div><div id="pullFill" class="pull-fill"></div><div id="pullHandle" class="pull-handle">PULL</div><div class="pull-max">100%</div></div><div class="pull-power"><span>POWER</span><b id="pullPowerText">0%</b></div><button id="cancelPullBtn" class="phase-subaction">構えに戻る</button></div>
-    <div id="shotFlash" class="hud shot-flash">SHOT</div>
-    <div class="hud help">見る：1本指/マウスドラッグ=回転　ピンチ/ホイール=ズーム　2本指/Shift+ドラッグ=移動　Ctrl+ドラッグ=XYZ軸移動</div>
+    <div id="shotFlash" class="hud shot-flash">SHOT</div><div class="hud help">見る：1本指/マウスドラッグ=回転　ピンチ/ホイール=ズーム　2本指/Shift+ドラッグ=移動　Ctrl+ドラッグ=XYZ軸移動</div>
   </div>
-  <script type="module" src="./src/main7.js"></script>
-  <script type="module" src="./src/shot-flow.js"></script>
+  <script type="module" src="./src/main7.js"></script><script type="module" src="./src/shot-flow.js"></script>
 </body>
 </html>
