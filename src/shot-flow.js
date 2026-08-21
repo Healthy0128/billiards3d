@@ -17,9 +17,11 @@ const powerControl=$('#powerControl');
 const shootBtn=$('#shootBtn');
 const shotFlash=$('#shotFlash');
 const ballInHandBtn=$('#ballInHandBtn');
+const modeBtn=$('#modeBtn');
+const resetBtn=$('#resetBtn');
 
 let phase='view';
-let cameraState=0; // main6 starts in follow-camera state. 0=follow, 1/2/3=browse presets.
+let cameraState=0; // main6: 0=follow stance, 1/2/3=browse views.
 let pulling=false;
 let pullPointer=null;
 let pullPower=0;
@@ -38,46 +40,29 @@ function clickCamera(){
   cameraBtn?.click();
   cameraState=(cameraState+1)%4;
 }
-
-function ensureBrowseCamera(){
-  if(cameraState===0) clickCamera();
-}
-
-function ensureStanceCamera(){
-  let guard=0;
-  while(cameraState!==0&&guard++<4) clickCamera();
-}
+function ensureBrowseCamera(){if(cameraState===0)clickCamera()}
+function ensureStanceCamera(){let guard=0;while(cameraState!==0&&guard++<4)clickCamera()}
 
 function nextView(){
   if(phase!=='view')return;
   ensureBrowseCamera();
-  clickCamera();
-  if(cameraState===0) clickCamera();
+  const target=cameraState===3?1:cameraState+1;
+  let guard=0;
+  while(cameraState!==target&&guard++<4)clickCamera();
 }
-
 function prevView(){
   if(phase!=='view')return;
   ensureBrowseCamera();
-  // Main camera button only cycles forward; three forward clicks equals one step back.
-  for(let i=0;i<3;i++) clickCamera();
-  if(cameraState===0) clickCamera();
+  const target=cameraState===1?3:cameraState-1;
+  let guard=0;
+  while(cameraState!==target&&guard++<4)clickCamera();
 }
 
 nextViewBtn?.addEventListener('click',nextView);
 prevViewBtn?.addEventListener('click',prevView);
-stanceBtn?.addEventListener('click',()=>{
-  ensureStanceCamera();
-  setPhase('aim');
-});
-backToViewBtn?.addEventListener('click',()=>{
-  ensureBrowseCamera();
-  setPhase('view');
-});
-toPullBtn?.addEventListener('click',()=>{
-  pullPower=0;
-  renderPull();
-  setPhase('pull');
-});
+stanceBtn?.addEventListener('click',()=>{ensureStanceCamera();setPhase('aim')});
+backToViewBtn?.addEventListener('click',()=>{ensureBrowseCamera();setPhase('view')});
+toPullBtn?.addEventListener('click',()=>{pullPower=0;renderPull();setPhase('pull')});
 cancelPullBtn?.addEventListener('click',()=>setPhase('aim'));
 
 function renderPull(){
@@ -89,32 +74,21 @@ function renderPull(){
   pullFill.style.height=`${Math.max(0,y-minY)}px`;
   pullPowerText.textContent=`${Math.round(pullPower)}%`;
 }
-
 function updatePullFromPointer(e){
   const r=pullTrack.getBoundingClientRect();
-  const minY=30;
-  const maxY=Math.max(minY+1,r.height-30);
+  const minY=30,maxY=Math.max(minY+1,r.height-30);
   const y=Math.min(maxY,Math.max(minY,e.clientY-r.top));
   pullPower=(y-minY)/(maxY-minY)*100;
   renderPull();
 }
-
 pullTrack?.addEventListener('pointerdown',e=>{
   if(phase!=='pull')return;
-  pulling=true;
-  pullPointer=e.pointerId;
-  pullTrack.setPointerCapture(e.pointerId);
-  updatePullFromPointer(e);
+  pulling=true;pullPointer=e.pointerId;pullTrack.setPointerCapture(e.pointerId);updatePullFromPointer(e);
 });
-pullTrack?.addEventListener('pointermove',e=>{
-  if(!pulling||e.pointerId!==pullPointer)return;
-  updatePullFromPointer(e);
-});
+pullTrack?.addEventListener('pointermove',e=>{if(pulling&&e.pointerId===pullPointer)updatePullFromPointer(e)});
 function releaseShot(e){
-  if(!pulling)return;
-  if(e&&e.pointerId!==pullPointer)return;
-  pulling=false;
-  pullPointer=null;
+  if(!pulling||(e&&e.pointerId!==pullPointer))return;
+  pulling=false;pullPointer=null;
   const p=Math.max(4,Math.round(pullPower));
   powerControl.value=String(p);
   powerControl.dispatchEvent(new Event('input',{bubbles:true}));
@@ -122,21 +96,12 @@ function releaseShot(e){
   shotFlash.classList.add('show');
   setTimeout(()=>shotFlash.classList.remove('show'),260);
   shootBtn.click();
-  if(navigator.vibrate) navigator.vibrate(18);
-  setTimeout(()=>{
-    ensureBrowseCamera();
-    setPhase('view');
-    pullPower=0;
-    renderPull();
-  },420);
+  if(navigator.vibrate)navigator.vibrate(18);
+  setTimeout(()=>{ensureBrowseCamera();setPhase('view');pullPower=0;renderPull()},420);
 }
 pullTrack?.addEventListener('pointerup',releaseShot);
-pullTrack?.addEventListener('pointercancel',()=>{
-  pulling=false;
-  pullPointer=null;
-});
+pullTrack?.addEventListener('pointercancel',()=>{pulling=false;pullPointer=null});
 
-// In VIEW phase the canvas is for looking, not aiming. A horizontal swipe cycles browse cameras.
 let canvasStart=null;
 const canvas=$('#game');
 canvas?.addEventListener('pointerdown',e=>{
@@ -145,24 +110,17 @@ canvas?.addEventListener('pointerdown',e=>{
 },{capture:true});
 canvas?.addEventListener('pointerup',e=>{
   if(phase!=='view'||!canvasStart||!ballInHandBtn.classList.contains('hidden'))return;
-  const dx=e.clientX-canvasStart.x,dy=e.clientY-canvasStart.y;
-  canvasStart=null;
-  if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.25){
-    dx>0?prevView():nextView();
-  }
+  const dx=e.clientX-canvasStart.x,dy=e.clientY-canvasStart.y;canvasStart=null;
+  if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.25)(dx>0?prevView:nextView)();
 },{capture:true});
 
-// Keep ball-in-hand usable regardless of the shot-flow phase.
 const observer=new MutationObserver(()=>{
   const active=!ballInHandBtn.classList.contains('hidden');
-  if(active){
-    ensureBrowseCamera();
-    setPhase('view');
-    statusEl.textContent='ボールインハンド：盤上をタップして手球を置き、「手球位置を確定」';
-  }
+  if(active){ensureBrowseCamera();setPhase('view');statusEl.textContent='ボールインハンド：盤上をタップして手球を置き、「手球位置を確定」'}
 });
 observer.observe(ballInHandBtn,{attributes:true,attributeFilter:['class']});
 
+for(const btn of [modeBtn,resetBtn])btn?.addEventListener('click',()=>setTimeout(()=>{ensureBrowseCamera();setPhase('view')},0));
 window.addEventListener('resize',renderPull);
 ensureBrowseCamera();
 setPhase('view');
