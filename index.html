@@ -27,12 +27,9 @@
     </header>
 
     <div id="phaseRail" class="hud phase-rail" aria-label="ショット手順">
-      <div data-step="view" class="phase-step active"><b>1</b><span>見る</span></div>
-      <i>›</i>
-      <div data-step="aim" class="phase-step"><b>2</b><span>構える</span></div>
-      <i>›</i>
-      <div data-step="pull" class="phase-step"><b>3</b><span>引く</span></div>
-      <i>›</i>
+      <div data-step="view" class="phase-step active"><b>1</b><span>見る</span></div><i>›</i>
+      <div data-step="aim" class="phase-step"><b>2</b><span>構える</span></div><i>›</i>
+      <div data-step="pull" class="phase-step"><b>3</b><span>引く</span></div><i>›</i>
       <div data-step="shot" class="phase-step"><b>4</b><span>打つ</span></div>
     </div>
 
@@ -49,6 +46,7 @@
         <button id="nextViewBtn">視点 ›</button>
         <button id="stanceBtn" class="primary-action">構える</button>
       </div>
+      <button id="ballInHandBtn" class="confirm-btn hidden">手球位置を確定</button>
     </div>
 
     <div id="fineAim" class="hud fine-aim">
@@ -70,7 +68,6 @@
         <div class="control-label">POWER <span id="powerText">35%</span></div>
         <input id="powerControl" type="range" min="0" max="100" value="35" />
         <button id="shootBtn" class="shoot-btn">SHOT</button>
-        <button id="ballInHandBtn" class="confirm-btn hidden">手球位置を確定</button>
       </div>
 
       <div class="aim-wrap compact-panel">
