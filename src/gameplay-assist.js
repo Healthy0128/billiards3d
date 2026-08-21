@@ -1,6 +1,7 @@
-// v1.2 gameplay assist module
-// Adds three user-facing aids through the stable runtime API only:
-// 1) next-target marker, 2) optional top-down aiming camera, 3) one-cushion guide.
+// v1.2.1 gameplay assist module
+// Adds four user-facing aids through the stable runtime API only:
+// 1) next-target marker, 2) auto-aim on stance, 3) optional top-down aiming camera,
+// 4) one-cushion guide.
 
 function waitForRuntime(){
   return new Promise(resolve=>{
@@ -18,7 +19,7 @@ const {THREE,scene,camera,table}=rt;
 const ballR=rt.ballR||.028575;
 
 // -----------------------------------------------------------------------------
-// Next-target marker
+// Next-target marker + automatic initial aim
 // -----------------------------------------------------------------------------
 
 function makeTargetTexture(){
@@ -89,6 +90,25 @@ function chooseTarget(){
   // Practice mode: suggest the closest object ball as a convenience only.
   return nearestOf(live,cue);
 }
+
+function autoAimToTarget(){
+  const cue=rt.getCueBall?.();
+  const target=chooseTarget();
+  if(!cue||!target||rt.isGameOver?.())return false;
+  const cx=cue.body.position.x,cz=cue.body.position.z;
+  const tx=target.body.position.x,tz=target.body.position.z;
+  const dx=tx-cx,dz=tz-cz;
+  if(Math.hypot(dx,dz)<.0001)return false;
+  rt.setAimAngle?.(Math.atan2(dz,dx));
+  return true;
+}
+
+// Register before shot-flow's stance handler. The aim is set first; then the
+// normal stance camera uses that direction. Subsequent swipe/fine controls are untouched.
+const stanceBtn=document.querySelector('#stanceBtn');
+stanceBtn?.addEventListener('click',()=>{
+  autoAimToTarget();
+});
 
 // -----------------------------------------------------------------------------
 // Top-down aiming camera
@@ -211,13 +231,12 @@ function updateCushionGuide(){
   if(!wall)return;
 
   const firstBall=rayBallHit(ox,oz,dx,dz);
-  if(firstBall<wall.t)return; // An object ball is reached before the cushion.
+  if(firstBall<wall.t)return;
 
   const y=table.y+ballR+.008;
   const wx=ox+dx*wall.t,wz=oz+dz*wall.t;
   setCoreGuide([new THREE.Vector3(ox,y,oz),new THREE.Vector3(wx,y,wz)]);
 
-  // A pocket mouth is an opening, not a cushion: end the guide there.
   if(isPocketMouth(wx,wz))return;
 
   let rdx=dx,rdz=dz;
@@ -239,8 +258,6 @@ function updateCushionGuide(){
   bounceGuide.visible=true;
 }
 
-// Core updates aiming first. Subscriber runs afterwards, so camera/guide adjustments
-// are applied only for rendering and do not alter physics or shot direction.
 rt.onFrame(()=>{
   const target=chooseTarget();
   if(target&&!rt.isGameOver?.()){
@@ -257,6 +274,8 @@ rt.onFrame(()=>{
 
 window.__billiardsGameplayAssist={
   targetMarker,bounceGuide,topButton:topBtn,
+  chooseTarget,
+  autoAimToTarget,
   isTopView:()=>topActive,
   setTopView:setTop
 };
