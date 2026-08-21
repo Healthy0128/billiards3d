@@ -23,32 +23,45 @@ jazz.volume=.14;
 
 let wanted=false;
 
+function syncButton(){
+  if(musicBtn)musicBtn.textContent=wanted&&!jazz.paused?'JAZZ ON':'JAZZ OFF';
+}
+
 async function playJazz(){
   wanted=true;
   audioState.musicOn=true;
-  if(musicBtn)musicBtn.textContent='JAZZ ON';
   try{
     jazz.muted=false;
+    if(jazz.readyState===0)jazz.load();
     await jazz.play();
   }catch(err){
     console.warn('Local jazz BGM could not start yet.',err);
   }
+  syncButton();
 }
 
 function stopJazz(){
   wanted=false;
   audioState.musicOn=false;
   jazz.pause();
-  if(musicBtn)musicBtn.textContent='JAZZ OFF';
+  syncButton();
 }
 
-// Replace the synthesized timer-based jazz with a real local recording.
+// Clean runtime hook.
 audioState.musicToggle=()=>{
   if(wanted||!jazz.paused)stopJazz();
   else playJazz();
 };
 
-// iOS/Safari: prepare the media element on the first explicit gesture.
+// IMPORTANT for iOS/Safari: call play() directly from the user's click gesture.
+// Capture phase prevents any stale handler from consuming the same button press.
+musicBtn?.addEventListener('click',e=>{
+  e.preventDefault();
+  e.stopImmediatePropagation();
+  if(wanted||!jazz.paused)stopJazz();
+  else void playJazz();
+},{capture:true});
+
 function unlock(){
   if(jazz.readyState===0)jazz.load();
 }
@@ -60,8 +73,10 @@ document.addEventListener('visibilitychange',()=>{
   if(document.hidden){
     jazz.pause();
   }else if(wanted){
-    jazz.play().catch(()=>{});
+    jazz.play().then(syncButton).catch(()=>syncButton());
   }
 });
 
+jazz.addEventListener('play',syncButton);
+jazz.addEventListener('pause',syncButton);
 window.__billiardsJazz={audio:jazz,play:playJazz,stop:stopJazz};
