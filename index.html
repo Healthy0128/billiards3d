@@ -7,14 +7,14 @@
   <title>3D Billiards</title>
   <link rel="stylesheet" href="./styles.css" />
 </head>
-<body>
+<body data-phase="view">
   <div id="app">
     <canvas id="game"></canvas>
 
     <header class="hud topbar">
       <div>
         <div class="title">3D BILLIARDS</div>
-        <div id="status" class="status">右下の照準パッドで狙いを合わせます</div>
+        <div id="status" class="status">まず盤面を見て、打ちたい方向を決めます</div>
       </div>
       <div class="actions">
         <button id="modeBtn">練習</button>
@@ -26,10 +26,29 @@
       </div>
     </header>
 
+    <div id="phaseRail" class="hud phase-rail" aria-label="ショット手順">
+      <div data-step="view" class="phase-step active"><b>1</b><span>見る</span></div>
+      <i>›</i>
+      <div data-step="aim" class="phase-step"><b>2</b><span>構える</span></div>
+      <i>›</i>
+      <div data-step="pull" class="phase-step"><b>3</b><span>引く</span></div>
+      <i>›</i>
+      <div data-step="shot" class="phase-step"><b>4</b><span>打つ</span></div>
+    </div>
+
     <div id="matchHud" class="hud match-hud hidden">
       <div id="p1Card" class="player active"><span>PLAYER 1</span><b id="p1Group">OPEN</b></div>
       <div id="gameLabel" class="versus">8 BALL</div>
       <div id="p2Card" class="player"><span>PLAYER 2</span><b id="p2Group">OPEN</b></div>
+    </div>
+
+    <div id="viewPanel" class="hud view-panel">
+      <div class="view-copy"><small>STEP 1</small><strong>盤面を見る</strong><span>視点を変えて狙いを決める</span></div>
+      <div class="view-buttons">
+        <button id="prevViewBtn">‹ 視点</button>
+        <button id="nextViewBtn">視点 ›</button>
+        <button id="stanceBtn" class="primary-action">構える</button>
+      </div>
     </div>
 
     <div id="fineAim" class="hud fine-aim">
@@ -47,7 +66,7 @@
         </div>
       </div>
 
-      <div class="power-column compact-panel">
+      <div class="power-column compact-panel legacy-power">
         <div class="control-label">POWER <span id="powerText">35%</span></div>
         <input id="powerControl" type="range" min="0" max="100" value="35" />
         <button id="shootBtn" class="shoot-btn">SHOT</button>
@@ -60,11 +79,27 @@
           <div class="aim-center"></div>
           <div class="aim-caption">左右にスワイプ</div>
         </div>
+        <button id="toPullBtn" class="phase-action">この向きで引く</button>
+        <button id="backToViewBtn" class="phase-subaction">見るに戻る</button>
       </div>
     </div>
 
-    <div class="hud help">照準パッド＝方向　◀▶＝微調整　撞点＝回転　POWER＝強さ　SHOT＝撞く</div>
+    <div id="pullPanel" class="hud pull-panel">
+      <div class="pull-copy"><small>STEP 3</small><strong>キューを引く</strong><span>下へ引くほど強く。離すと打ちます。</span></div>
+      <div id="pullTrack" class="pull-track">
+        <div class="pull-zero">0%</div>
+        <div id="pullFill" class="pull-fill"></div>
+        <div id="pullHandle" class="pull-handle">PULL</div>
+        <div class="pull-max">100%</div>
+      </div>
+      <div class="pull-power"><span>POWER</span><b id="pullPowerText">0%</b></div>
+      <button id="cancelPullBtn" class="phase-subaction">構えに戻る</button>
+    </div>
+
+    <div id="shotFlash" class="hud shot-flash">SHOT</div>
+    <div class="hud help">見る → 構える → 引く → 離して打つ</div>
   </div>
   <script type="module" src="./src/main6.js"></script>
+  <script type="module" src="./src/shot-flow.js"></script>
 </body>
 </html>
