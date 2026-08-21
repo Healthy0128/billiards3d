@@ -4,7 +4,6 @@ const phaseSteps=[...document.querySelectorAll('.phase-step')];
 const statusEl=$('#status'),stanceBtn=$('#stanceBtn'),toPullBtn=$('#toPullBtn'),backToViewBtn=$('#backToViewBtn'),cancelPullBtn=$('#cancelPullBtn');
 const pullPanel=$('#pullPanel'),pullPowerText=$('#pullPowerText'),powerControl=$('#powerControl'),shootBtn=$('#shootBtn'),shotFlash=$('#shotFlash'),canvas=$('#game');
 const ballInHandBtn=$('#ballInHandBtn'),modeBtn=$('#modeBtn'),resetBtn=$('#resetBtn');
-const AIM_SENSITIVITY=0.075;
 const CANCEL_MARGIN=6;
 let phase='view',pulling=false,pullPointer=null,pullPower=0,pullStart=null,lastPull=null,pullCancelled=false;
 
@@ -14,8 +13,8 @@ function setPhase(next){
   phase=next;body.dataset.phase=next;
   phaseSteps.forEach(el=>el.classList.toggle('active',el.dataset.step===next));
   if(next==='view')statusEl.textContent='盤面を自由に見て、打ちたい方向を決めます';
-  if(next==='aim')statusEl.textContent='構えました。下へ引いてパワー、左右はゆっくり微調整';
-  if(next==='pull')statusEl.textContent='開始位置より上へ戻すとキャンセルできます';
+  if(next==='aim')statusEl.textContent='左右スワイプで狙いを決めます。引っ張りは強さだけです';
+  if(next==='pull')statusEl.textContent='方向は固定中。下へ引くほど強く、上へ戻すとキャンセル';
   if(next==='shot')statusEl.textContent='SHOT';
 }
 
@@ -30,7 +29,7 @@ sling.id='slingGuide';
 sling.innerHTML='<div class="sling-line"></div><div class="sling-origin"></div><div class="sling-cancel-line"></div><div class="sling-handle"></div><div class="sling-power">0%</div>';
 Object.assign(sling.style,{position:'fixed',inset:'0',pointerEvents:'none',zIndex:'35',display:'none'});
 const line=sling.querySelector('.sling-line'),origin=sling.querySelector('.sling-origin'),cancelLine=sling.querySelector('.sling-cancel-line'),handle=sling.querySelector('.sling-handle'),badge=sling.querySelector('.sling-power');
-Object.assign(line.style,{position:'absolute',height:'8px',borderRadius:'999px',background:'rgba(255,255,255,.72)',transformOrigin:'0 50%',boxShadow:'0 0 18px rgba(255,255,255,.25)'});
+Object.assign(line.style,{position:'absolute',width:'8px',borderRadius:'999px',background:'rgba(255,255,255,.72)',transformOrigin:'50% 0',boxShadow:'0 0 18px rgba(255,255,255,.25)'});
 Object.assign(cancelLine.style,{position:'absolute',left:'0',right:'0',height:'2px',background:'rgba(255,110,110,.5)',boxShadow:'0 0 12px rgba(255,70,70,.25)'});
 for(const el of [origin,handle])Object.assign(el.style,{position:'absolute',width:'34px',height:'34px',borderRadius:'50%',border:'3px solid white',background:'rgba(5,15,12,.72)',transform:'translate(-50%,-50%)',boxShadow:'0 4px 18px rgba(0,0,0,.35)'});
 Object.assign(handle.style,{width:'48px',height:'48px',background:'rgba(18,124,92,.82)'});
@@ -39,7 +38,7 @@ document.body.appendChild(sling);
 
 function maxPullDistance(){return Math.min(300,Math.max(165,Math.min(innerWidth,innerHeight)*.46))}
 function showPull(x,y){
-  sling.style.display='block';origin.style.left=x+'px';origin.style.top=y+'px';handle.style.left=x+'px';handle.style.top=y+'px';badge.style.left=x+'px';badge.style.top=y+'px';line.style.left=x+'px';line.style.top=y+'px';line.style.width='0px';cancelLine.style.top=(y-CANCEL_MARGIN)+'px';
+  sling.style.display='block';origin.style.left=x+'px';origin.style.top=y+'px';handle.style.left=x+'px';handle.style.top=y+'px';badge.style.left=x+'px';badge.style.top=y+'px';line.style.left=(x-4)+'px';line.style.top=y+'px';line.style.height='0px';cancelLine.style.top=(y-CANCEL_MARGIN)+'px';
 }
 function hidePull(){sling.style.display='none'}
 function setCancelVisual(active){
@@ -50,22 +49,19 @@ function setCancelVisual(active){
   badge.textContent=active?'CANCEL':Math.round(pullPower)+'%';
 }
 function renderPull(x,y){
-  const rawDx=x-pullStart.x,rawDy=y-pullStart.y;
+  const rawDy=y-pullStart.y;
   setCancelVisual(rawDy<-CANCEL_MARGIN);
   const powerDy=Math.max(0,rawDy);
   const max=maxPullDistance();
-  const displayDx=rawDx*.42;
-  const displayDy=rawDy;
-  const d=Math.hypot(displayDx,displayDy),capped=Math.min(d,max),angle=Math.atan2(displayDy,displayDx),scale=d?capped/d:0;
-  const hx=pullStart.x+displayDx*scale,hy=pullStart.y+displayDy*scale;
+  const clamped=Math.min(powerDy,max);
+  const hx=pullStart.x,hy=pullStart.y+clamped;
   handle.style.left=hx+'px';handle.style.top=hy+'px';badge.style.left=hx+'px';badge.style.top=hy+'px';
-  line.style.width=capped+'px';line.style.transform=`rotate(${angle}rad)`;
+  line.style.height=clamped+'px';
   pullPower=Math.min(100,powerDy/max*100);
   if(!pullCancelled)badge.textContent=Math.round(pullPower)+'%';
   pullPowerText.textContent=Math.round(pullPower)+'%';
   powerControl.value=String(Math.max(1,Math.round(pullPower)));powerControl.dispatchEvent(new Event('input',{bubbles:true}));
-  if(!pullCancelled&&powerDy>2)window.__billiardsRuntime?.aimFromScreenPull?.(rawDx*AIM_SENSITIVITY,Math.max(34,powerDy));
-  lastPull={dx:rawDx,dy:rawDy,d:Math.hypot(rawDx,rawDy)};
+  lastPull={dy:rawDy,d:Math.abs(rawDy)};
 }
 
 canvas?.addEventListener('pointerdown',e=>{
