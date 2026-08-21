@@ -14,7 +14,7 @@
     <header class="hud topbar">
       <div>
         <div class="title">3D BILLIARDS</div>
-        <div id="status" class="status">ドラッグで狙い、引いて、離してショット</div>
+        <div id="status" class="status">台をなぞって方向を合わせます</div>
       </div>
       <div class="actions">
         <button id="modeBtn">練習</button>
@@ -30,13 +30,23 @@
       <div id="p2Card" class="player"><span>PLAYER 2</span><b id="p2Group">OPEN</b></div>
     </div>
 
-    <div class="hud power-wrap">
-      <div class="label">PULL / POWER <span id="powerText">0%</span></div>
-      <div class="power"><div id="powerFill"></div></div>
+    <div class="hud pro-panel">
+      <div class="spin-wrap">
+        <div class="control-label">CUE BALL <span id="spinText">CENTER</span></div>
+        <div id="spinPad" class="spin-pad" aria-label="撞点">
+          <div class="spin-cross h"></div><div class="spin-cross v"></div>
+          <div id="spinDot" class="spin-dot"></div>
+        </div>
+      </div>
+      <div class="power-column">
+        <div class="control-label">POWER <span id="powerText">35%</span></div>
+        <input id="powerControl" type="range" min="0" max="100" value="35" />
+        <button id="shootBtn" class="shoot-btn">SHOT</button>
+      </div>
     </div>
 
-    <div class="hud help">狙う → キューを手前に引く → 離して撞く　強さは引いた距離＋ゲージで確認</div>
+    <div class="hud help">台をなぞる＝狙い　撞点＝回転　POWER＝強さ　SHOT＝撞く</div>
   </div>
-  <script type="module" src="./src/main2.js"></script>
+  <script type="module" src="./src/main3.js"></script>
 </body>
 </html>
