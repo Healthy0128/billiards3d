@@ -16,7 +16,6 @@ const rt=await waitForRuntime();
 const cv=document.createElement('canvas');
 cv.width=cv.height=128;
 const g=cv.getContext('2d');
-g.clearRect(0,0,128,128);
 g.beginPath();
 g.moveTo(64,106);
 g.lineTo(34,48);
@@ -32,12 +31,18 @@ g.stroke();
 
 const tex=new THREE.CanvasTexture(cv);
 tex.colorSpace=THREE.SRGBColorSpace;
-const marker=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false,depthWrite:false,opacity:.95}));
+const marker=new THREE.Sprite(new THREE.SpriteMaterial({
+  map:tex,
+  transparent:true,
+  depthTest:false,
+  depthWrite:false,
+  opacity:.95
+}));
 marker.scale.set(.105,.105,1);
 marker.renderOrder=999;
 rt.scene.add(marker);
 
-function tick(){
+function updateMarker(){
   const cb=rt.getCueBall?.();
   if(cb&&!cb.pocketed&&!cb.falling&&cb.mesh?.visible!==false){
     const p=cb.mesh?.position||cb.body?.position;
@@ -45,12 +50,19 @@ function tick(){
       const r=rt.ballR||.028575;
       marker.position.set(p.x,p.y+r*3.5,p.z);
       marker.visible=true;
+      return;
     }
-  }else{
-    marker.visible=false;
   }
-  requestAnimationFrame(tick);
+  marker.visible=false;
 }
 
-tick();
+// v1.1+ uses the game's single RAF. Keep a fallback for old builds only.
+if(typeof rt.onFrame==='function'){
+  rt.onFrame(updateMarker);
+  updateMarker();
+}else{
+  const tick=()=>{updateMarker();requestAnimationFrame(tick);};
+  tick();
+}
+
 window.__billiardsCueMarker=marker;
