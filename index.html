@@ -20,6 +20,7 @@
         <button id="modeBtn">練習</button>
         <button id="guideBtn">GUIDE ON</button>
         <button id="ballInHandBtn" class="hidden">手球確定</button>
+        <button id="musicBtn">JAZZ OFF</button>
         <button id="resetBtn">ラック</button>
         <button id="cameraBtn">視点</button>
         <button id="soundBtn">SOUND ON</button>
@@ -28,7 +29,7 @@
 
     <div id="matchHud" class="hud match-hud hidden">
       <div id="p1Card" class="player active"><span>PLAYER 1</span><b id="p1Group">OPEN</b></div>
-      <div class="versus">8 BALL</div>
+      <div id="gameLabel" class="versus">8 BALL</div>
       <div id="p2Card" class="player"><span>PLAYER 2</span><b id="p2Group">OPEN</b></div>
     </div>
 
@@ -47,8 +48,8 @@
       </div>
     </div>
 
-    <div class="hud help">台をなぞる＝狙い　撞点＝回転　POWER＝強さ　SHOT＝撞く　ファウル時は台をタップして手球を置く</div>
+    <div class="hud help">台をなぞる＝狙い　撞点＝回転　POWER＝強さ　SHOT＝撞く　モードで練習／8BALL／9BALLを切替</div>
   </div>
-  <script type="module" src="./src/main4.js"></script>
+  <script type="module" src="./src/main5.js"></script>
 </body>
 </html>
