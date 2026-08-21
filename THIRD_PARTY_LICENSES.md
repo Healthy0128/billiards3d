@@ -34,3 +34,15 @@ The following real recorded billiard/pool sounds are bundled locally in `assets/
   - Used for rack/reset feedback.
 
 A source note is also stored next to the audio files in `assets/audio/sfx/README.md`.
+
+## Jazz BGM
+
+- Local file: `assets/audio/bgm/jazz-improv-looped-cc0.mp3`
+- Original title: `jazz improvisation looped`
+- Author: Alex McCulloch / Pro Sensory
+- Source: OpenGameArt
+- License: Creative Commons Zero (CC0)
+- Original downloadable file: `jazz_improv_looped.mp3`
+- This track is used as the looping lounge/jazz background music for the `JAZZ ON/OFF` control.
+
+The OpenGameArt page identifies the track as CC0/public domain and describes it as a looped jazz improvisation. Attribution is appreciated by the author but is not required by CC0.
