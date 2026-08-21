@@ -30,6 +30,49 @@ jobs:
             -o assets/audio/sfx/racking-pool-balls-cc0.wav
           test -s assets/audio/sfx/pool-shots-cc0.mp3
           test -s assets/audio/sfx/racking-pool-balls-cc0.wav
+      - name: Split recorded pool shots into one-shot clips
+        run: |
+          set -euxo pipefail
+          rm -f assets/audio/sfx/ball-hit-*.mp3
+          ffmpeg -hide_banner -i assets/audio/sfx/pool-shots-cc0.mp3 \
+            -af silencedetect=noise=-34dB:d=0.10 -f null - 2> /tmp/silence.log || true
+          python3 - <<'PY'
+          import re, subprocess, pathlib
+          log = pathlib.Path('/tmp/silence.log').read_text(errors='ignore')
+          starts=[float(x) for x in re.findall(r'silence_start: ([0-9.]+)',log)]
+          ends=[float(x) for x in re.findall(r'silence_end: ([0-9.]+)',log)]
+          duration=float(subprocess.check_output([
+              'ffprobe','-v','error','-show_entries','format=duration','-of','default=nw=1:nk=1',
+              'assets/audio/sfx/pool-shots-cc0.mp3'
+          ], text=True).strip())
+          silent=[]
+          for i,s in enumerate(starts):
+              e=ends[i] if i < len(ends) else duration
+              silent.append((s,e))
+          intervals=[]
+          cursor=0.0
+          for s,e in silent:
+              if s-cursor>0.06: intervals.append((max(0,cursor-0.025), min(duration,s+0.04)))
+              cursor=e
+          if duration-cursor>0.06: intervals.append((max(0,cursor-0.025), duration))
+          if not intervals:
+              intervals=[(0,min(duration,1.2))]
+          # Keep useful short impacts; clamp long passages so browser playback is snappy.
+          cleaned=[]
+          for a,b in intervals:
+              length=b-a
+              if length<0.06: continue
+              cleaned.append((a,min(b,a+1.15)))
+          for i,(a,b) in enumerate(cleaned[:6],1):
+              out=f'assets/audio/sfx/ball-hit-{i:02d}.mp3'
+              subprocess.check_call([
+                  'ffmpeg','-y','-hide_banner','-loglevel','error','-ss',str(a),'-to',str(b),
+                  '-i','assets/audio/sfx/pool-shots-cc0.mp3','-af','afade=t=out:st=0.95:d=0.18',
+                  '-codec:a','libmp3lame','-q:a','4',out
+              ])
+          print('segments:', cleaned[:6])
+          PY
+          ls -lh assets/audio/sfx/ball-hit-*.mp3
       - name: Write source note
         run: |
           cat > assets/audio/sfx/README.md <<'EOF'
@@ -43,6 +86,8 @@ jobs:
             - License: Creative Commons 0 (CC0)
             - Source: https://freesound.org/people/csaszi/sounds/350918/
             - Mirror used for automated import: `krhollow/csc281-survival-game`
+          - `ball-hit-01.mp3` ... `ball-hit-06.mp3`
+            - Automatically split one-shot clips derived from the CC0 recording above.
           - `racking-pool-balls-cc0.wav`
             - Original source: Freesound ID 274566
             - License: Creative Commons 0 (CC0)
@@ -53,6 +98,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -- assets/audio/sfx/pool-shots-cc0.mp3 assets/audio/sfx/racking-pool-balls-cc0.wav assets/audio/sfx/README.md
-          git commit -m 'Add CC0 recorded billiard sound effects'
+          git add -- assets/audio/sfx
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Prepare recorded billiard one-shot sound effects'
           git push origin HEAD:main
