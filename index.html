@@ -5,10 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
   <meta name="theme-color" content="#07130f" />
   <title>3D Billiards</title>
-  <link rel="stylesheet" href="./styles.css?v=1.2.1" />
-  <link rel="stylesheet" href="./camera-controls.css?v=1.2.1" />
+  <link rel="stylesheet" href="./styles.css?v=1.2.2" />
+  <link rel="stylesheet" href="./camera-controls.css?v=1.2.2" />
   <style>
-    .build-info{position:fixed;left:max(10px,env(safe-area-inset-left));bottom:max(7px,env(safe-area-inset-bottom));z-index:30;padding:4px 8px;border-radius:7px;background:rgba(4,12,10,.68);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.62);font:600 9px/1.2 system-ui,-apple-system,sans-serif;letter-spacing:.05em;pointer-events:none;backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
+    .version-toggle{position:fixed;left:max(14px,env(safe-area-inset-left));bottom:96px;z-index:32;padding:7px 11px;border-radius:999px;background:rgba(4,12,10,.74);border:1px solid rgba(255,255,255,.16);color:rgba(255,255,255,.74);font:800 10px/1 system-ui,-apple-system,sans-serif;letter-spacing:.06em;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+    .version-panel{position:fixed;left:max(14px,env(safe-area-inset-left));bottom:134px;z-index:31;max-width:min(78vw,420px);padding:9px 11px;border-radius:10px;background:rgba(4,12,10,.9);border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.72);font:600 10px/1.35 system-ui,-apple-system,sans-serif;letter-spacing:.04em;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 8px 26px rgba(0,0,0,.28)}
+    .version-panel[hidden]{display:none}
   </style>
 </head>
 <body data-phase="view">
@@ -25,13 +27,24 @@
     <div class="hud control-dock"><div class="spin-wrap compact-panel"><div class="control-label">CUE BALL <span id="spinText">CENTER</span></div><div id="spinPad" class="spin-pad" aria-label="撞点"><div class="spin-cross h"></div><div class="spin-cross v"></div><div id="spinDot" class="spin-dot"></div></div></div><div class="power-column compact-panel legacy-power"><div class="control-label">POWER <span id="powerText">35%</span></div><input id="powerControl" type="range" min="0" max="100" value="35" /><button id="shootBtn" class="shoot-btn">SHOT</button></div><div class="aim-wrap compact-panel"><div class="control-label">AIM <span id="aimHint">SWIPE</span></div><div id="aimPad" class="aim-pad"><div class="aim-center"></div><div class="aim-caption">左右にスワイプ</div></div><button id="toPullBtn" class="phase-action">この向きで引く</button><button id="backToViewBtn" class="phase-subaction">見るに戻る</button></div></div>
     <div id="pullPanel" class="hud pull-panel"><div class="pull-copy"><small>STEP 3</small><strong>キューを引く</strong><span>下へ引くほど強く。離すと打ちます。</span></div><div id="pullTrack" class="pull-track"><div class="pull-zero">0%</div><div id="pullFill" class="pull-fill"></div><div id="pullHandle" class="pull-handle">PULL</div><div class="pull-max">100%</div></div><div class="pull-power"><span>POWER</span><b id="pullPowerText">0%</b></div><button id="cancelPullBtn" class="phase-subaction">構えに戻る</button></div>
     <div id="shotFlash" class="hud shot-flash">SHOT</div><div class="hud help">見る：1本指/マウスドラッグ=回転　ピンチ/ホイール=ズーム　2本指/Shift+ドラッグ=移動　Ctrl+ドラッグ=XYZ軸移動</div>
-    <div id="buildInfo" class="build-info">CREDITS · v1.2.1 · AUTO AIM · TARGET · TOP VIEW · CUSHION GUIDE · BUILD 2026-08-22 07:48 JST</div>
+    <button id="versionToggle" class="version-toggle" type="button" aria-expanded="false">VERSION</button>
+    <div id="versionPanel" class="version-panel" hidden>CREDITS · v1.2.2 · VERSION UI · AUTO AIM · TARGET · TOP VIEW · CUSHION GUIDE · BUILD 2026-08-22 08:35 JST</div>
   </div>
-  <script type="module" src="./src/main11.js?v=1.2.1"></script>
-  <script type="module" src="./src/recorded-sfx.js?v=1.2.1"></script>
-  <script type="module" src="./src/jazz-bgm.js?v=1.2.1"></script>
-  <script type="module" src="./src/cue-ball-marker.js?v=1.2.1"></script>
-  <script type="module" src="./src/gameplay-assist.js?v=1.2.1"></script>
-  <script type="module" src="./src/shot-flow.js?v=1.2.1"></script>
+  <script>
+    (()=>{
+      const btn=document.getElementById('versionToggle');
+      const panel=document.getElementById('versionPanel');
+      const close=()=>{panel.hidden=true;btn.setAttribute('aria-expanded','false')};
+      btn.addEventListener('click',e=>{e.stopPropagation();const open=panel.hidden;panel.hidden=!open;btn.setAttribute('aria-expanded',String(open))});
+      panel.addEventListener('click',e=>e.stopPropagation());
+      document.addEventListener('pointerdown',()=>{if(!panel.hidden)close()});
+    })();
+  </script>
+  <script type="module" src="./src/main11.js?v=1.2.2"></script>
+  <script type="module" src="./src/recorded-sfx.js?v=1.2.2"></script>
+  <script type="module" src="./src/jazz-bgm.js?v=1.2.2"></script>
+  <script type="module" src="./src/cue-ball-marker.js?v=1.2.2"></script>
+  <script type="module" src="./src/gameplay-assist.js?v=1.2.2"></script>
+  <script type="module" src="./src/shot-flow.js?v=1.2.2"></script>
 </body>
 </html>
