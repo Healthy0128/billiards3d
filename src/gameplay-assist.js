@@ -1,4 +1,4 @@
-// v1.2.4 gameplay assist: target marker, auto aim, cue-eye camera, top view, cushion guide.
+// v1.3.2 gameplay assist: target marker, auto aim, cue-eye camera, top view, cushion guide.
 function waitForRuntime(){return new Promise(resolve=>{const check=()=>{const rt=window.__billiardsRuntime;if(rt?.scene&&rt?.getBalls&&rt?.onFrame){resolve(rt);return}setTimeout(check,25)};check()})}
 const rt=await waitForRuntime();
 const {THREE,scene,camera,table}=rt,ballR=rt.ballR||.028575;
@@ -44,9 +44,8 @@ function forceCueEyeCamera(){
   if(lockedAimAngle==null)lockedAimAngle=rt.getAimAngle?.()??0;
   const a=lockedAimAngle,dx=Math.cos(a),dz=Math.sin(a),p=cue.body.position;
   camera.up.set(0,1,0);
-  // Camera sits just behind and above the cue ball, approximately over the cue shaft.
-  camera.position.set(p.x-dx*.46,table.y+ballR+.20,p.z-dz*.46);
-  // Look through the cue ball toward a point slightly ahead on the shot line.
+  // Slightly farther behind the cue ball for a more natural shooting view.
+  camera.position.set(p.x-dx*.60,table.y+ballR+.20,p.z-dz*.60);
   camera.lookAt(p.x+dx*.17,table.y+ballR*.72,p.z+dz*.17);
 }
 
