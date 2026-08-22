@@ -1,4 +1,4 @@
-// v1.3.3 gameplay assist: target marker, auto aim, right-hand cue-eye camera, top view, cushion guide.
+// v1.3.4 gameplay assist: target marker, auto aim, centered cue-eye camera, top view, cushion guide.
 function waitForRuntime(){return new Promise(resolve=>{const check=()=>{const rt=window.__billiardsRuntime;if(rt?.scene&&rt?.getBalls&&rt?.onFrame){resolve(rt);return}setTimeout(check,25)};check()})}
 const rt=await waitForRuntime();
 const {THREE,scene,camera,table}=rt,ballR=rt.ballR||.028575;
@@ -45,16 +45,14 @@ function forceCueEyeCamera(){
   const cue=rt.getCueBall?.();if(!cue)return;
   if(lockedAimAngle==null)lockedAimAngle=rt.getAimAngle?.()??0;
   const a=lockedAimAngle,dx=Math.cos(a),dz=Math.sin(a),p=cue.body.position;
-  const rightX=-dz,rightZ=dx;
   setFov(STANCE_FOV);
   camera.up.set(0,1,0);
-  // Right-handed player view: camera sits near the cue-holding hand, slightly right of the shaft.
+  // Keep the camera centered exactly on the cue axis; no left/right offset.
   camera.position.set(
-    p.x-dx*.62+rightX*.14,
+    p.x-dx*.62,
     table.y+ballR+.22,
-    p.z-dz*.62+rightZ*.14
+    p.z-dz*.62
   );
-  // Keep the sight line through the cue ball, while showing more table around it.
   camera.lookAt(p.x+dx*.24,table.y+ballR*.74,p.z+dz*.24);
 }
 
