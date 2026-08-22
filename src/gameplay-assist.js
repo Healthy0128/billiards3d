@@ -1,7 +1,8 @@
-// v1.3.2 gameplay assist: target marker, auto aim, cue-eye camera, top view, cushion guide.
+// v1.3.3 gameplay assist: target marker, auto aim, right-hand cue-eye camera, top view, cushion guide.
 function waitForRuntime(){return new Promise(resolve=>{const check=()=>{const rt=window.__billiardsRuntime;if(rt?.scene&&rt?.getBalls&&rt?.onFrame){resolve(rt);return}setTimeout(check,25)};check()})}
 const rt=await waitForRuntime();
 const {THREE,scene,camera,table}=rt,ballR=rt.ballR||.028575;
+const NORMAL_FOV=43,STANCE_FOV=55;
 
 function groupOf(n){return n>=1&&n<=7?'solid':n>=9&&n<=15?'stripe':null}
 function distanceToCue(b,c){return Math.hypot(b.body.position.x-c.body.position.x,b.body.position.z-c.body.position.z)}
@@ -37,16 +38,24 @@ function setTop(active){topActive=!!active&&aimPhase();if(!topActive&&aimPhase()
 topBtn.addEventListener('click',()=>setTop(!topActive));
 new MutationObserver(()=>{if(!aimPhase()){topActive=false;lockedAimAngle=null}updateTopButton()}).observe(document.body,{attributes:true,attributeFilter:['data-phase']});updateTopButton();
 
-function forceTopCamera(){if(!topActive||!aimPhase())return;const portrait=innerHeight>innerWidth;camera.up.set(portrait?1:0,0,portrait?0:-1);camera.position.set(0,table.y+(portrait?4.15:3.35),.0001);camera.lookAt(0,table.y,0)}
+function setFov(value){if(Math.abs(camera.fov-value)<.01)return;camera.fov=value;camera.updateProjectionMatrix()}
+function forceTopCamera(){if(!topActive||!aimPhase())return;setFov(NORMAL_FOV);const portrait=innerHeight>innerWidth;camera.up.set(portrait?1:0,0,portrait?0:-1);camera.position.set(0,table.y+(portrait?4.15:3.35),.0001);camera.lookAt(0,table.y,0)}
 function forceCueEyeCamera(){
   if(topActive||!aimPhase())return;
   const cue=rt.getCueBall?.();if(!cue)return;
   if(lockedAimAngle==null)lockedAimAngle=rt.getAimAngle?.()??0;
   const a=lockedAimAngle,dx=Math.cos(a),dz=Math.sin(a),p=cue.body.position;
+  const rightX=-dz,rightZ=dx;
+  setFov(STANCE_FOV);
   camera.up.set(0,1,0);
-  // Slightly farther behind the cue ball for a more natural shooting view.
-  camera.position.set(p.x-dx*.60,table.y+ballR+.20,p.z-dz*.60);
-  camera.lookAt(p.x+dx*.17,table.y+ballR*.72,p.z+dz*.17);
+  // Right-handed player view: camera sits near the cue-holding hand, slightly right of the shaft.
+  camera.position.set(
+    p.x-dx*.62+rightX*.14,
+    table.y+ballR+.22,
+    p.z-dz*.62+rightZ*.14
+  );
+  // Keep the sight line through the cue ball, while showing more table around it.
+  camera.lookAt(p.x+dx*.24,table.y+ballR*.74,p.z+dz*.24);
 }
 
 const coreGuide=scene.children.find(o=>o.isLine&&o.material?.isLineDashedMaterial)||null;
@@ -60,6 +69,8 @@ rt.onFrame(()=>{
   const target=chooseTarget();
   if(target&&!rt.isGameOver?.()){const p=target.mesh?.position||target.body?.position;if(p){targetMarker.position.set(p.x,p.y+ballR*4.2,p.z);targetMarker.visible=true}}else targetMarker.visible=false;
   updateCushionGuide();
-  if(topActive)forceTopCamera();else forceCueEyeCamera();
+  if(topActive)forceTopCamera();
+  else if(aimPhase())forceCueEyeCamera();
+  else setFov(NORMAL_FOV);
 });
 window.__billiardsGameplayAssist={targetMarker,bounceGuide,topButton:topBtn,chooseTarget,autoAimToTarget,isTopView:()=>topActive,setTopView:setTop};
