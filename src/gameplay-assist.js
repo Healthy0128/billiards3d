@@ -1,4 +1,4 @@
-// v1.2.1 gameplay assist module
+// v1.2.3 gameplay assist module
 // Adds four user-facing aids through the stable runtime API only:
 // 1) next-target marker, 2) auto-aim on stance, 3) optional top-down aiming camera,
 // 4) one-cushion guide.
@@ -103,12 +103,31 @@ function autoAimToTarget(){
   return true;
 }
 
-// Register before shot-flow's stance handler. The aim is set first; then the
-// normal stance camera uses that direction. Subsequent swipe/fine controls are untouched.
 const stanceBtn=document.querySelector('#stanceBtn');
 stanceBtn?.addEventListener('click',()=>{
   autoAimToTarget();
 });
+
+// -----------------------------------------------------------------------------
+// Stable aiming camera
+// -----------------------------------------------------------------------------
+
+let lockedStanceCamera=null;
+function captureStanceCamera(){
+  lockedStanceCamera={
+    position:camera.position.clone(),
+    quaternion:camera.quaternion.clone(),
+    up:camera.up.clone()
+  };
+}
+function clearStanceCamera(){lockedStanceCamera=null;}
+function restoreStanceCamera(){
+  if(!lockedStanceCamera)return;
+  camera.position.copy(lockedStanceCamera.position);
+  camera.quaternion.copy(lockedStanceCamera.quaternion);
+  camera.up.copy(lockedStanceCamera.up);
+  camera.updateMatrixWorld();
+}
 
 // -----------------------------------------------------------------------------
 // Top-down aiming camera
@@ -138,15 +157,28 @@ function updateTopButton(){
 function setTop(active){
   topActive=!!active&&aimPhase();
   updateTopButton();
-  if(!topActive){
+  if(topActive){
+    clearStanceCamera();
+  }else if(aimPhase()){
     camera.up.set(0,1,0);
     window.billiardsCamera?.stance?.();
+    captureStanceCamera();
   }
 }
 topBtn.addEventListener('click',()=>setTop(!topActive));
 
+let lastPhase=document.body.dataset.phase||'view';
 const phaseObserver=new MutationObserver(()=>{
-  if(!aimPhase())topActive=false;
+  const phase=document.body.dataset.phase||'view';
+  if(!aimPhase()){
+    topActive=false;
+    clearStanceCamera();
+  }else if(phase==='aim'&&lastPhase==='view'&&!topActive){
+    // shot-flow has already switched into stance by the time this observer runs.
+    // Capture that initial stance once. Swipe/fine-aim changes only the cue/guide.
+    captureStanceCamera();
+  }
+  lastPhase=phase;
   updateTopButton();
 });
 phaseObserver.observe(document.body,{attributes:true,attributeFilter:['data-phase']});
@@ -269,7 +301,14 @@ rt.onFrame(()=>{
   }else targetMarker.visible=false;
 
   updateCushionGuide();
-  forceTopCamera();
+
+  if(topActive){
+    forceTopCamera();
+  }else if(aimPhase()){
+    // main11 still computes its internal stance yaw from the aim angle.
+    // Override only the rendered camera transform so swipe does not rotate the table.
+    restoreStanceCamera();
+  }
 });
 
 window.__billiardsGameplayAssist={
